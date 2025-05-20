@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-mongodb
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: my-mongodb
+  template:
+    metadata:
+      labels:
+        app: my-mongodb
+    spec:
+      containers:
+        - name: my-mongodb
+          image: mongo:latest
+          ports:
+            - containerPort: 3306
+          env:
+            - name: DB_NAME
+              value: "testdb"
+            - name: DB_USER
+              value: "jothika"
+            - name: DB_PASSWORD
+              value: "asdfg"
+            - name: POSTGRES_PASSWORD  # Only used if PostgreSQL
+              value: "{{POSTGRES_PASSWORD}}"
+            - name: MYSQL_ROOT_PASSWORD  # Only used if MySQL/MariaDB
+              value: "{{ROOT_PASSWORD}}"
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: my-mongodb
+spec:
+  type: NodePort
+  selector:
+    app: my-mongodb
+  ports:
+    - protocol: TCP
+      port: 3306
+      targetPort: 3306
+      nodePort: {{NODE_PORT}}

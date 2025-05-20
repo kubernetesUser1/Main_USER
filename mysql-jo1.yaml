@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mysql-jo1
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mysql-jo1
+  template:
+    metadata:
+      labels:
+        app: mysql-jo1
+    spec:
+      containers:
+        - name: mysql-jo1
+          image: mysql:latest
+          ports:
+            - containerPort: 3306
+          env:
+            - name: DB_NAME
+              value: "testdb"
+            - name: DB_USER
+              value: "cloud344"
+            - name: DB_PASSWORD
+              value: "passwordr123"
+            - name: POSTGRES_PASSWORD  # Only used if PostgreSQL
+              value: "{{POSTGRES_PASSWORD}}"
+            - name: MYSQL_ROOT_PASSWORD  # Only used if MySQL/MariaDB
+              value: "rootpassword"
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mysql-jo1
+spec:
+  selector:
+    app: mysql-jo1
+  ports:
+    - protocol: TCP
+      port: 3306
+      targetPort: 3306

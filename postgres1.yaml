@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres1
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres1
+  template:
+    metadata:
+      labels:
+        app: postgres1
+    spec:
+      containers:
+        - name: postgres1
+          image: postgres:latest
+          ports:
+            - containerPort: 3306
+          env:
+            - name: DB_NAME
+              value: "mydata1"
+            - name: DB_USER
+              value: "cdacchn"
+            - name: DB_PASSWORD
+              value: "asdfgh7"
+            - name: POSTGRES_PASSWORD  # Only used if PostgreSQL
+              value: "plmkjn1"
+            - name: MYSQL_ROOT_PASSWORD  # Only used if MySQL/MariaDB
+              value: "{{ROOT_PASSWORD}}"
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres1
+spec:
+  type: NodePort
+  selector:
+    app: postgres1
+  ports:
+    - protocol: TCP
+      port: 3306
+      targetPort: 3306
+      nodePort: {{NODE_PORT}}

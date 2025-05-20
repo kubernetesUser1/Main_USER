@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Replication Controllers</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <style>
+        body {
+            background-color: #f4f4f4;
+        }
+        .container {
+            margin-top: 40px;
+        }
+        .back-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 14px;
+            font-weight: bold;
+            padding: 6px 12px;
+            border-radius: 5px;
+            background: linear-gradient(135deg, #007bff, #0056b3);
+            color: white;
+            transition: all 0.3s ease-in-out;
+            border: none;
+        }
+        .back-btn:hover {
+            background: linear-gradient(135deg, #0056b3, #003d80);
+            transform: scale(1.05);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <button class="btn btn-outline-primary" onclick="goBack()">
+             Back to Home
+        </button>
+        <h2 class="text-center mt-3">Replication Controllers</h2>
+
+        <table class="table table-bordered table-striped mt-3">
+            <thead class="table-dark">
+                <tr>
+                    <th>Name</th>
+                    <th>Labels</th>
+                    <th>Pods</th>
+                    <th>Created</th>
+                    <th>Images</th>
+                </tr>
+            </thead>
+            <tbody id="replication-table">
+                <tr>
+                    <td colspan="5" class="text-center">Loading...</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            fetchReplicationControllers();
+        });
+
+        function fetchReplicationControllers() {
+            fetch("/api/replication-controllers")
+                .then(response => response.json())
+                .then(data => {
+                    console.log("API Response:", data);
+                    const tableBody = document.getElementById("replication-table");
+                    tableBody.innerHTML = "";
+
+                    if (!Array.isArray(data) || data.length === 0) {
+                        tableBody.innerHTML = `<tr><td colspan="5" class="text-center">No replication controllers found.</td></tr>`;
+                        return;
+                    }
+
+                    data.forEach(controller => {
+                        const row = document.createElement("tr");
+
+                        // Name Column
+                        const nameCell = document.createElement("td");
+                        nameCell.textContent = controller.name || "-";
+                        row.appendChild(nameCell);
+
+                        // Labels Column
+                        const labelsCell = document.createElement("td");
+                        labelsCell.textContent = Object.entries(controller.labels || {})
+                            .map(([k, v]) => `${k}=${v}`).join(", ") || "-";
+                        row.appendChild(labelsCell);
+
+                        // Pods Column
+                        const podsCell = document.createElement("td");
+                        podsCell.textContent = `${controller.pods.ready}/${controller.pods.total}`;
+                        row.appendChild(podsCell);
+
+                        // Created Column
+                        const createdCell = document.createElement("td");
+                        createdCell.textContent = timeAgo(controller.createdTime);
+                        row.appendChild(createdCell);
+
+                        // Images Column
+                        const imagesCell = document.createElement("td");
+                        imagesCell.textContent = controller.images.join(", ") || "-";
+                        row.appendChild(imagesCell);
+
+                        tableBody.appendChild(row);
+                    });
+                })
+                .catch(error => {
+                    console.error("Error fetching replication controllers:", error);
+                    document.getElementById("replication-table").innerHTML =
+                        `<tr><td colspan="5" class="text-center text-danger">Failed to load data.</td></tr>`;
+                });
+        }
+
+        function timeAgo(date) {
+            const seconds = Math.floor((new Date() - new Date(date)) / 1000);
+            if (seconds < 60) return `${seconds} seconds ago`;
+            const minutes = Math.floor(seconds / 60);
+            if (minutes < 60) return `${minutes} minutes ago`;
+            const hours = Math.floor(minutes / 60);
+            if (hours < 24) return `${hours} hours ago`;
+            const days = Math.floor(hours / 24);
+            return `${days} days ago`;
+        }
+
+        function goBack() {
+            window.location.href = "index.html"; 
+        }
+    </script>
+</body>
+</html>

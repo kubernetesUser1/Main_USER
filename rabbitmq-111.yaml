@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rabbitmq-111
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: rabbitmq-111
+  template:
+    metadata:
+      labels:
+        app: rabbitmq-111
+    spec:
+      containers:
+        - name: rabbitmq-111
+          image: rabbitmq:latest
+          ports:
+            - containerPort: 3306
+          env:
+            - name: DB_NAME
+              value: "testdb"
+            - name: DB_USER
+              value: "admin"
+            - name: DB_PASSWORD
+              value: "passwodr5678"
+            - name: POSTGRES_PASSWORD  # Only used if PostgreSQL
+              value: "{{POSTGRES_PASSWORD}}"
+            - name: MYSQL_ROOT_PASSWORD  # Only used if MySQL/MariaDB
+              value: "{{ROOT_PASSWORD}}"
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: rabbitmq-111
+spec:
+  selector:
+    app: rabbitmq-111
+  ports:
+    - protocol: TCP
+      port: 3306
+      targetPort: 3306

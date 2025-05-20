@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Application Management</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+        }
+        .sidebar {
+            height: 100vh;
+            width: 250px;
+            position: fixed;
+            background: #343a40;
+            padding-top: 20px;
+        }
+        .sidebar a {
+            padding: 10px;
+            text-decoration: none;
+            font-size: 18px;
+            color: white;
+            display: block;
+        }
+        .sidebar a:hover {
+            background: #575d63;
+        }
+        .content {
+            margin-left: 270px;
+            padding: 20px;
+        }
+        .card img {
+            width: 50px;
+            height: 50px;
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <h4 class="text-white text-center">APPS</h4>
+        <a href="#" onclick="showCategory('databases')">Databases</a>
+        <a href="#" onclick="showCategory('message-brokers')">Message Brokers</a>
+        <a href="#" onclick="showCategory('search-engines')">Search Engine</a>
+        <hr class="text-white">
+        <a href="deployment.html">Deployments</a>
+        <a href="replication.html">Replication Controllers</a>
+    </div>
+
+    <div class="content">
+        <!-- Databases -->
+        <div id="databases" class="category" style="display: none;">
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="card text-center p-3">
+                        <img src="https://upload.wikimedia.org/wikipedia/en/d/dd/MySQL_logo.svg">
+                        <h3>MySQL</h3>
+                        <button class="btn btn-primary" onclick="navigateToDeploy('MySQL')">DEPLOY</button>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card text-center p-3">
+                        <img src="https://upload.wikimedia.org/wikipedia/commons/2/29/Postgresql_elephant.svg">
+                        <h3>PostgreSQL</h3>
+                        <button class="btn btn-primary" onclick="navigateToDeploy('PostgreSQL')">DEPLOY</button>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card text-center p-3">
+                        <img src="https://upload.wikimedia.org/wikipedia/commons/7/72/Apache_CouchDB_logo.svg">
+                        <h3>CouchDB</h3>
+                        <button class="btn btn-primary" onclick="navigateToDeploy('CouchDB')">DEPLOY</button>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card text-center p-3">
+                        <img src="https://upload.wikimedia.org/wikipedia/commons/c/ca/MariaDB_colour_logo.svg">
+                        <h3>MariaDB</h3>
+                        <button class="btn btn-primary" onclick="navigateToDeploy('MariaDB')">DEPLOY</button>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card text-center p-3">
+                        <img src="https://upload.wikimedia.org/wikipedia/commons/9/93/MongoDB_Logo.svg">
+                        <h3>MongoDB</h3>
+                        <button class="btn btn-primary" onclick="navigateToDeploy('MongoDB')">DEPLOY</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Message Brokers -->
+        <div id="message-brokers" class="category" style="display: none;">
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="card text-center p-3">
+                        <img src="https://upload.wikimedia.org/wikipedia/commons/7/71/RabbitMQ_logo.svg">
+                        <h3>RabbitMQ</h3>
+                        <button class="btn btn-primary" onclick="navigateToDeploy('RabbitMQ')">DEPLOY</button>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card text-center p-3">
+                        <img src="https://upload.wikimedia.org/wikipedia/commons/5/54/Apache_ActiveMQ_Logo.svg" alt="ActiveMQ">
+                        <h3>ActiveMQ</h3>
+                        <button class="btn btn-primary" onclick="navigateToDeploy('ActiveMQ')">DEPLOY</button>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card text-center p-3">
+                        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/0/0e/Kong_logo.svg/2560px-Kong_logo.svg.png" alt="Kong" style="height:50px;">
+                        <h3>Kong</h3>
+                        <button class="btn btn-primary" onclick="navigateToDeploy('Kong')">DEPLOY</button>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card text-center p-3">
+                        <img src="https://upload.wikimedia.org/wikipedia/commons/0/01/Apache_Kafka_logo.svg" alt="Kafka">
+                        <h3>Kafka</h3>
+                        <button class="btn btn-primary" onclick="navigateToDeploy('Kafka')">DEPLOY</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Search Engine -->
+        <div id="search-engines" class="category" style="display: none;">
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="card text-center p-3">
+                        <img src="https://upload.wikimedia.org/wikipedia/commons/f/f4/Elasticsearch_logo.svg">
+                        <h3>Elasticsearch</h3>
+                        <button class="btn btn-primary" onclick="navigateToDeploy('Elasticsearch')">DEPLOY</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function showCategory(categoryId) {
+            document.querySelectorAll('.category').forEach(cat => {
+                cat.style.display = 'none';
+            });
+            document.getElementById(categoryId).style.display = 'block';
+        }
+
+        function navigateToDeploy(applicationName) {
+            window.location.href = `deploy.html?application=${encodeURIComponent(applicationName)}`;
+        }
+    </script>
+</body>
+</html>
+
+
+

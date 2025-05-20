@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kubernetes Deployments</title>
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+    <style>
+        body { background-color: #f8f9fa; }
+        .container { margin-top: 40px; max-width: 90%; }
+        .table-hover tbody tr:hover { background-color: #f1f1f1; }
+        .search-bar { position: relative; margin-bottom: 20px; }
+        .search-bar input { padding-left: 40px; }
+        .search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); }
+        .three-dots-menu { cursor: pointer; font-size: 18px; }
+        .actions-dropdown { text-align: center; }
+        .deployment-checkbox { cursor: pointer; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+     <button class="btn btn-outline-primary" onclick="goToHome()"> Back to Home</button>
+    <h2 class="text-center mb-4 text-primary">Kubernetes Deployments</h2>
+
+    <div class="search-bar">
+        <i class="search-icon bi bi-search"></i>
+        <input type="text" id="search" class="form-control" placeholder="Search deployments...">
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-bordered table-hover">
+            <thead class="table-light">
+                <tr>
+                    <th><input type="checkbox" id="select-all"></th>
+                    <th>Name</th>
+                    <th>Labels</th>
+                    <th>Pods</th>
+                    <th>Created</th>
+                    <th>Image</th>
+                    <th class="actions-dropdown">Actions</th>
+                </tr>
+            </thead>
+            <tbody id="deployments-table">
+                <!-- Data will be inserted dynamically -->
+            </tbody>
+        </table>
+    </div>
+
+    <button id="delete-selected" class="btn btn-danger mt-3" style="display:none;">Delete Selected</button>
+</div>
+
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    fetch("/api/deployments")
+        .then(response => response.json())
+        .then(data => {
+            console.log("API Response:", data);
+            if (!Array.isArray(data)) {
+                console.error("Error: API did not return an array!");
+                return;
+            }
+
+            const tableBody = document.getElementById("deployments-table");
+            tableBody.innerHTML = "";
+
+            data.forEach(deploy => {
+                const row = document.createElement("tr");
+
+                // Deployment Name
+                const deploymentName = deploy.name || "-";
+
+                // Labels: Display key=value pairs or '-'
+                const labels = deploy.labels 
+                    ? Object.entries(deploy.labels).map(([k, v]) => `${k}=${v}`).join(", ") 
+                    : "-";
+
+                // Pods Column: Show 1/1 or 0/1 like Kubernetes Dashboard
+                let podStatusText = deploy.pods 
+                    ? `${deploy.pods.ready}/${deploy.pods.total}` 
+                    : "-";
+
+                // Created Time: Convert timestamp to "43 sec ago"
+                const createdTime = timeAgo(deploy.createdTime);
+
+                // Image Column: Show correct image name or "-"
+                const imageName = deploy.image || "-";
+
+                row.innerHTML = `
+                    <td><input type="checkbox" class="deployment-checkbox" data-name="${deploymentName}"></td>
+                    <td><a href="pod.html?deployment=${encodeURIComponent(deploymentName)}" class="text-primary">${deploymentName}</a></td>
+                    <td>${labels}</td>
+                    <td>${podStatusText}</td>
+                    <td>${createdTime}</td>
+                    <td>${imageName}</td>
+                    <td class="actions-dropdown">
+                        <div class="dropdown">
+                            <i class="bi bi-three-dots-vertical three-dots-menu" data-bs-toggle="dropdown"></i>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item delete-deployment" data-name="${deploymentName}" href="#">Delete</a></li>
+                                <li><a class="dropdown-item scale-deployment" data-name="${deploymentName}" href="#">Scale</a></li>
+                            </ul>
+                        </div>
+                    </td>
+                `;
+                tableBody.appendChild(row);
+            });
+
+            updateDeleteButtonVisibility();
+        })
+        .catch(error => console.error("Error fetching deployments:", error));
+});
+
+// "Select All" Checkbox
+document.getElementById("select-all").addEventListener("change", function () {
+    document.querySelectorAll(".deployment-checkbox").forEach(checkbox => {
+        checkbox.checked = this.checked;
+    });
+    updateDeleteButtonVisibility();
+});
+
+// Update Delete Button Visibility
+document.addEventListener("change", function (event) {
+    if (event.target.classList.contains("deployment-checkbox")) {
+        updateDeleteButtonVisibility();
+    }
+});
+
+function updateDeleteButtonVisibility() {
+    const anyChecked = document.querySelectorAll(".deployment-checkbox:checked").length > 0;
+    document.getElementById("delete-selected").style.display = anyChecked ? "block" : "none";
+}
+
+// Delete Selected Deployments
+document.getElementById("delete-selected").addEventListener("click", function () {
+    const selectedDeployments = Array.from(document.querySelectorAll(".deployment-checkbox:checked"))
+        .map(checkbox => checkbox.getAttribute("data-name"));
+    if (selectedDeployments.length === 0) return;
+
+    if (confirm(`Are you sure you want to delete the selected deployments?`)) {
+        selectedDeployments.forEach(deploymentName => {
+            fetch(`/api/deployments/${deploymentName}`, { method: "DELETE" })
+                .then(() => location.reload())
+                .catch(error => console.error("Error deleting deployment:", error));
+        });
+    }
+});
+
+function timeAgo(timestamp) {
+    const currentTime = new Date().getTime(); // browser time
+    const podTime = new Date(timestamp).getTime(); // UTC from cluster
+
+    let timeDiff = (currentTime - podTime) / 1000;
+
+    // Prevent negative values
+    if (timeDiff < 0) timeDiff = 0;
+
+    if (timeDiff < 60) return `${Math.floor(timeDiff)} seconds ago`;
+    if (timeDiff < 3600) return `${Math.floor(timeDiff / 60)} minutes ago`;
+    if (timeDiff < 86400) return `${Math.floor(timeDiff / 3600)} hours ago`;
+    return `${Math.floor(timeDiff / 86400)} days ago`;
+}
+
+
+// Delete Deployment via Three-Dot Menu
+$(document).on("click", ".delete-deployment", function () {
+    const deploymentName = $(this).data("name");
+    if (confirm(`Are you sure you want to delete ${deploymentName}?`)) {
+        fetch(`/api/deployments/${deploymentName}`, { method: "DELETE" })
+            .then(response => {
+                if (response.ok) {
+                    alert(`Successfully deleted deployment: ${deploymentName}`);
+                    location.reload();
+                } else {
+                    alert(`Failed to delete deployment: ${deploymentName}`);
+                }
+            })
+            .catch(error => console.error("Error deleting deployment:", error));
+    }
+});
+
+$(document).on("click", ".scale-deployment", function () {
+        const deploymentName = $(this).data("name");
+        const replicas = prompt("Enter new replica count:");
+        if (replicas && !isNaN(replicas)) {
+            fetch(`/api/deployments/${deploymentName}/scale`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ replicas: parseInt(replicas) })
+            }).then(response => {
+            if (!response.ok) {
+                throw new Error("Failed to scale deployment");
+            }
+            return response.json();
+        })
+        .then(() => {
+            alert(`✅ Scale input request successfully submitted for "${deploymentName}"!`);
+            location.reload();
+        })
+        .catch(error => {
+            console.error("Error scaling deployment:", error);
+            alert("❌ Failed to submit scale request. Please try again.");
+        });
+    } else {
+        alert("⚠ Please enter a valid number for replicas.");
+    }
+});
+function goToHome() {
+    window.location.href = "index.html"; // Redirect to home page
+}
+
+
+</script>
+
+</body>
+</html>

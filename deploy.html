@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Application Deployment</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+  <!-- Navbar with Back to Services -->
+  <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
+    <div class="container">
+      <a class="navbar-brand text-primary fw-bold" href="index.html">←Back</a>
+      <span class="navbar-text">Application Deployment</span>
+    </div>
+  </nav>
+
+  <div class="container mt-5">
+    <div class="card shadow-lg p-4">
+      <h2 class="text-center text-primary mb-4">Application Deployment</h2>
+
+      <form id="deploy-form">
+        <!-- Select Application Dropdown -->
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Select Application</label>
+          <select id="service-dropdown" class="form-select" required>
+            <option value="">-- Select Application --</option>
+            <option value="mysql">MySQL</option>
+            <option value="postgresql">PostgreSQL</option>
+            <option value="couchdb">Apache CouchDB</option>
+            <option value="mongodb">MongoDB</option>
+            <option value="mariadb">MariaDB</option>
+            <option value="activemq">ActiveMQ</option>
+            <option value="kafka">Kafka</option>
+            <option value="rabbitmq">RabbitMQ</option>
+            <option value="elasticsearch">Elasticsearch</option>
+          </select>
+        </div>
+
+        <!-- Application Name -->
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Application Name</label>
+          <input type="text" id="service-name" class="form-control" required />
+        </div>
+
+        <!-- Database Name -->
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Database Name</label>
+          <input type="text" id="db-name" class="form-control" required />
+        </div>
+
+        <!-- Username -->
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Username</label>
+          <input type="text" id="username" class="form-control" required />
+        </div>
+
+        <!-- Password -->
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Password</label>
+          <input type="password" id="password" class="form-control" required />
+        </div>
+
+        <!-- Service Type Dropdown -->
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Service Type</label>
+          <select id="service-type" class="form-select" required>
+            <option value="ClusterIP">ClusterIP</option>
+            <option value="NodePort">NodePort</option>
+          </select>
+        </div>
+
+        <!-- Port Number (Visible only for NodePort) -->
+        <div class="mb-3" id="port-number-container" style="display: none;">
+         <label class="form-label fw-semibold">Port Number</label>
+         <input type="number" id="port-number" class="form-control" placeholder="Enter NodePort (e.g., 30000)" min="30000" max="32767" />
+        </div>
+
+        <!-- Root Password (Visible for MySQL, MariaDB) -->
+        <div class="mb-3" id="root-password-container" style="display: none;">
+          <label class="form-label fw-semibold" id="root-password-label">Root Password</label>
+          <input type="password" id="root-password" class="form-control" />
+        </div>
+
+        <!-- Postgres Password (Visible for PostgreSQL) -->
+        <div class="mb-3" id="postgres-password-container" style="display: none;">
+          <label class="form-label fw-semibold">Postgres Password</label>
+          <input type="password" id="postgres-password" class="form-control" />
+        </div>
+
+        <button type="submit" class="btn btn-primary w-100">Deploy</button>
+      </form>
+    </div>
+  </div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const appDropdown = document.getElementById("service-dropdown"); // Select Application Dropdown
+    const rootPasswordContainer = document.getElementById("root-password-container");
+    const rootPasswordLabel = document.getElementById("root-password-label");
+    const rootPasswordInput = document.getElementById("root-password");
+    const postgresPasswordContainer = document.getElementById("postgres-password-container");
+    const serviceTypeDropdown = document.getElementById("service-type");
+    const portNumberContainer = document.getElementById("port-number-container");
+    const portNumberInput = document.getElementById("port-number");
+
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const selectedService = urlParams.get("application"); // Get application from URL
+
+    console.log("URL Parameter - Selected Application:", selectedService);
+       if (selectedService && appDropdown) {
+        let found = false;
+
+        // Wait for options to load
+        setTimeout(() => {
+            for (let i = 0; i < appDropdown.options.length; i++) {
+                if (appDropdown.options[i].value.toLowerCase() === selectedService.toLowerCase()) {
+                    appDropdown.value = appDropdown.options[i].value; // Auto-select dropdown
+                    found = true;
+                    console.log("Dropdown Value Set:", appDropdown.value); // Debugging
+                    appDropdown.dispatchEvent(new Event("change")); // Trigger UI update
+                    break;
+                }
+            }
+
+            if (!found) {
+                console.warn("Service not found in dropdown:", selectedService);
+            }
+        }, 200); // Small delay to ensure dropdown options are loaded
+    }
+
+    // Show specific password fields based on selected application
+    appDropdown.addEventListener("change", function () {
+        const selectedApp = appDropdown.value;
+
+        // Reset visibility
+        rootPasswordContainer.style.display = "none";
+        postgresPasswordContainer.style.display = "none";
+        rootPasswordInput.required = false;
+
+        if (selectedApp === "mysql" || selectedApp === "mariadb") {
+            rootPasswordContainer.style.display = "block";
+            rootPasswordLabel.innerText = selectedApp === "mysql" ? "MySQL Root Password" : "MariaDB Root Password";
+            rootPasswordInput.required = true;
+        } else if (selectedApp === "postgresql") {
+            postgresPasswordContainer.style.display = "block";
+        }
+    });
+
+    // Show/hide port number based on service type selection
+    serviceTypeDropdown.addEventListener("change", function () {
+        if (this.value === "NodePort") {
+            portNumberContainer.style.display = "block";
+            portNumberInput.required = true;
+        } else {
+            portNumberContainer.style.display = "none";
+            portNumberInput.required = false;
+        }
+    });
+
+    // Handle form submission
+    document.getElementById("deploy-form").addEventListener("submit", function (event) {
+        event.preventDefault();
+
+        const selectedApplication = appDropdown.value;
+        const applicationName = document.getElementById("service-name").value; // Application Name input
+        const dbName = document.getElementById("db-name").value;
+        const username = document.getElementById("username").value;
+        const password = document.getElementById("password").value;
+        const serviceType = serviceTypeDropdown.value;
+        const port = serviceType === "NodePort" ? parseInt(portNumberInput.value) : null;
+    
+        const rootPassword = rootPasswordInput.value;
+        const postgresPassword = document.getElementById("postgres-password").value;
+
+        const requestData = {
+            applicationName,  // Application Name entered by user
+            selectedApplication, // Dropdown selection (MySQL, PostgreSQL, etc.)
+            dbName,
+            username,
+            password,
+            serviceType,
+        };
+        if (serviceType === "NodePort") {
+             requestData.port = port;
+        }
+
+        if (selectedApplication === "mysql" || selectedApplication === "mariadb") {
+            requestData.rootPassword = rootPassword;
+        } else if (selectedApplication === "postgresql") {
+            requestData.postgresPassword = postgresPassword;
+        }
+
+        fetch("/deploy-service", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(requestData)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                alert(data.error);
+            } else {
+                alert("Application deployed successfully!");
+                window.location.href = `deployment.html?application=${encodeURIComponent(applicationName)}`;
+            }
+        })
+        .catch(error => {
+            console.error("Error:", error);
+            alert("Deployment failed!");
+        });
+    });
+});
+</script>
+</body>
+</html>
